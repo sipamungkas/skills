@@ -1,0 +1,4 @@
+interface:
+  display_name: "Expo Feature-Based Structure"
+  short_description: "Feature-first structure for Expo Router apps"
+  default_prompt: "Use $expo-feature-based-structure to organize this Expo Router app into routing, features, and shared UI."
