@@ -7,7 +7,7 @@ description: Use when building, refactoring, or reviewing an Expo Router (React 
 
 ## Overview
 
-Keep Expo Router routing in `src/app/**`, screen implementation in `src/features/**/screens`, and cross-feature reusable UI in `src/components/app/**`. This separates navigation from implementation and prevents monolithic screen files.
+Keep Expo Router routing in `src/app/**`, screen implementation in `src/features/**/screens`, and cross-feature reusable UI in `src/components/app/**`. This separates navigation from implementation and prevents monolithic screen files. Every file defines exactly one component, so no file ever holds two component functions.
 
 ## Directory Contract
 
@@ -24,7 +24,7 @@ Each `src/features/<feature>/` folder contains:
 ```text
 src/features/<feature>/
   screens/       # one screen component per file, ends with -screen.tsx
-  components/    # feature-local sections and UI
+  components/    # feature-local components, one per file
   hooks/         # feature-local state/hooks
   data/          # optional mock/stitch/demo data
 ```
@@ -35,10 +35,11 @@ src/features/<feature>/
 - Route folders use Expo Router conventions: `index.tsx` and optional `_layout.tsx`.
 - Each route `index.tsx` re-exports exactly one screen from `src/features/**/screens`.
 - Screen files orchestrate state and compose sections.
-- Reusable feature-specific sections live under the owning feature's `components/`.
+- All feature-specific components live under the owning feature's `components/`, whether or not they are reused.
 - Cross-feature reusable primitives live in `src/components/app/`.
 - Feature, screen, and route names use English only. UI copy may remain localized.
-- No file defines multiple full screens.
+- Every file defines exactly one component: a screen file contains only the screen component, and a component file contains only that component.
+- Never define two component functions in one file. Extract even small ones (for example a `RememberMeCheckbox`) into their own file.
 
 ## Naming Conventions
 
@@ -53,6 +54,7 @@ Examples:
 
 - `src/app/auth/sign-in/index.tsx`
 - `src/features/auth/screens/sign-in-screen.tsx` exports `SignInScreen`
+- `src/features/auth/components/remember-me-checkbox.tsx` exports `RememberMeCheckbox`
 - `src/features/checkout/components/payment-method-card.tsx` exports `PaymentMethodCard`
 
 ## Screen Responsibilities
@@ -66,11 +68,19 @@ Each `screens/*-screen.tsx` should:
 
 It should not:
 
-- define large reusable UI blocks inline
-- contain multiple unrelated screens
+- define any other component inline, even a small one such as a `RememberMeCheckbox` row or a single list item
+- define multiple components of any kind
 - own unrelated feature logic
 
-Split a section into a feature component when the screen exceeds roughly 200 lines, or when a section is reused by a second screen.
+Extract every non-screen component into its own file as soon as it exists — size and reuse are never factors. If the screen itself exceeds roughly 200 lines, treat that as a signal to decompose more of its content into component files, not as permission to keep components inline.
+
+## One Component Per File
+
+A function is a component when it returns JSX and is rendered as `<Foo />`. Such functions always live in their own file, with no exceptions for size or single use.
+
+- Screen files contain only the screen component. Component files contain only their one component and export only it.
+- `renderItem`-style render callbacks must delegate to a named component file, for example `renderItem={({ item }) => <PaymentMethodCard method={item} />}`.
+- Plain non-component helpers (formatters, mappers, validators) and event handlers that do not render JSX may stay in the screen file, following the Data and State Placement rules.
 
 ## Shared vs Feature-Specific
 
@@ -116,7 +126,7 @@ This is the desired size and responsibility of a route file.
 1. normalize route names to English
 2. move route files into route folders using `index.tsx`
 3. split screens into per-screen files under `src/features`
-4. extract feature-specific sections from screen files
+4. extract every non-screen component from screen files into its own per-component file
 5. extract true shared primitives into `src/components/app`
 6. move data/helpers into feature `hooks`/`data` and `src/lib`
 7. remove old monolithic files
